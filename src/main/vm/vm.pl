@@ -174,7 +174,7 @@ reduce(config(bnot(E),Env),config(R,EnvOut)) :-
 reduce(config(band(E1, E2), Env), config(R, EnvOut)) :-
 	reduce_all(config(E1, Env), config(V1, Env1)),
 	(boolean(V1) -> (
-		V1 == false -> R = false ; 
+		V1 == false -> R = false , EnvOut = Env1 ; 
 		reduce_all(config(E2, Env1), config(V2, EnvOut)),
 		(boolean(V2) -> (V2 == false -> R = false ; R = true) 
 			; throw(type_mismatch(band(E1,E2))))
@@ -183,7 +183,7 @@ reduce(config(band(E1, E2), Env), config(R, EnvOut)) :-
 reduce(config(bor(E1, E2), Env), config(R, EnvOut)) :-
 	reduce_all(config(E1, Env), config(V1, Env1)),
 	(boolean(V1) -> (
-		V1 == true -> R = true ;
+		V1 == true -> R = true, EnvOut = Env1 ;
 		reduce_all(config(E2, Env1), config(V2, EnvOut)),
 		(boolean(V2) -> (V2 == true -> R = true ; R = false) 
 			; throw(type_mismatch(bor(E1,E2))))
@@ -246,7 +246,7 @@ reduce(config(Id,Env),config(Value,Env)):-
 %% --- Variable, Constant expression - END ---
 
 %% --- Function call - START --- 
-reduce(config(call(F,[]),_),config(X,_)):-
+reduce(config(call(F,X),_),config(X,_)):-
 	is_builtin(F,func),!,
 	p_call_builtin(F,X).
 
@@ -288,6 +288,11 @@ reduce_all(config(E,Env),config(E2,EnvOut)):-
 % --- Statement reduction - START ---
 reduce_stmt(config([],Env),Env):- !. % Base case
 %% --- Procedure - Call - START ---
+reduce_stmt(config([call(F,[])|Rest],Env),EnvOut) :- 
+	is_builtin(F,proc),!,
+	p_call_builtin(F,[]),
+	reduce_stmt(config(Rest,Env),EnvOut).
+
 reduce_stmt(config([call(F,[X])|Rest],Env),EnvOut) :- 
 	is_builtin(F,proc),!,
 	reduce_all(config(X,Env),config(V,Env1)),
