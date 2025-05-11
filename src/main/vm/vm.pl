@@ -247,7 +247,7 @@ reduce(config(call(F,[]),_),config(X,_)):-
 reduce(config(call(F,Args),Env),config(R,EnvOut)):-
 	Env = env(SymTable,_),
 	lookup(F,SymTable,id(F,func,func(F,Params,_,Stmts),_)),!,
-	((length(Args, N),length(Params, M),N==M)-> % Check the number of arguments
+	(length(Args, N),length(Params, M),N==M-> % Check the number of arguments
 		(
 			eval_args(Args,Args1,Env)), % Evaluate the arguments
 			% Add the parameters to the symbol table
@@ -259,12 +259,12 @@ reduce(config(call(F,Args),Env),config(R,EnvOut)):-
 			reduce_stmt(config(Stmts,env(SymTable1,F)),Env3),
 			Env3 = env([_|SymTable2],_),
 			EnvOut = env(SymTable2,_),
-			lookup(F,SymTable2,id(_,_,_,R))
+			lookup(F,SymTable2,id(_,_,_,R)
 		)
-		; throw(wrong_number_of_argument(call(F,Args))).
+		; throw(wrong_number_of_argument(call(F,Args)))).
 	
-reduce(config(call(F,_),_),_):-
-	undeclare_function(F).
+reduce(config(call(F,Args),_),_):-
+	throw(undeclare_function(call(F,Args))).
 % --- Expression reduction - END ---
 
 
@@ -282,6 +282,28 @@ reduce_stmt(config([call(F,[X])|Body],Env),EnvOut) :-
 	reduce_all(config(X,Env),config(V,Env1)),
 	p_call_builtin(F,[V]), %!!! Read stmt's input
 	reduce_stmt(config(Body,Env1),EnvOut).
+
+reduce_stmt(config([call(F,Args)|Body],Env),EnvOut) :-
+	Env = env(SymTable,_),
+	lookup(F,SymTable,id(F,proc,proc(F,Params,Stmts),_)),!,
+	((length(Args, N),length(Params, M),N==M)-> % Check the number of arguments
+		(
+			eval_args(Args,Args1,Env), % Evaluate the arguments
+			% Add the parameters to the symbol table
+			create_env(Params,env([[]|SymTable],_),Env1),
+			% Bind the arguments to the parameters
+			bind_args(Params,Args1,Env1,Env2),
+			% Reduce the function body
+			Env2 = env(SymTable1,_),
+			reduce_stmt(config(Stmts,env(SymTable1,F)),Env3),
+			Env3 = env([_|SymTable2],_),
+			Env4 = env(SymTable2,_)
+		)
+		; throw(wrong_number_of_argument(call(F,Args)))),
+	reduce_stmt(config(Body,Env4),EnvOut).
+	
+reduce_stmt(config([call(F,Args)|_],_),_):-
+	throw(undeclare_procedure(call(F,Args))).
 %% --- Procedure-Call - END ---
 
 %% --- Assignment - START ---
