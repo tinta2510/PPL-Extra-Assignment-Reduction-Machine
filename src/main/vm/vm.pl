@@ -79,6 +79,7 @@ create_env([func(I,_,_,_)|_],env([L1|_],_),_):-
 	throw(redeclare_function(I)).
 %# Add function to the symbol table
 create_env([func(I,Params,RetType,Stmts)|L],env([L1|L2],T),EnvOut):-
+	create_env(Params,env([[]|[L1|L2]],_),_),
 	create_env(
 		L,env([[id(I,func,func(I,Params,RetType,Stmts),null)|L1]|L2],T),
 		EnvOut).
@@ -92,6 +93,7 @@ create_env([proc(I,_,_)|_],env([L1|_],_),_):-
 	throw(redeclare_procedure(I)).
 %# Add procedure to the symbol table
 create_env([proc(I,Params,Stmts)|L],env([L1|L2],T),EnvOut):-
+	create_env(Params,env([[]|[L1|L2]],_),_),
 	create_env(
 		L,env([[id(I,proc,proc(I,Params,Stmts),null)|L1]|L2],T),
 		EnvOut).
@@ -251,17 +253,22 @@ reduce(config(call(F,Args),Env),config(R,EnvOut)):-
 	lookup(F,SymTable,id(F,func,func(F,Params,_,Stmts),_)),!,
 	(length(Args, N),length(Params, M),N==M-> % Check the number of arguments
 		(
-			eval_args(Args,Args1,Env)), % Evaluate the arguments
+			eval_args(Args,Args1,Env), % Evaluate the arguments
 			% Add the parameters to the symbol table
 			create_env(Params,env([[]|SymTable],_),Env1),
 			% Bind the arguments to the parameters
-			bind_args(Params,Args1,Env1,Env2),
+			catch(
+				bind_args(Params,Args1,Env1,Env2),
+				type_mismatch(_),
+				throw(type_mismatch(call(F,Args)))
+			),
 			% Reduce the function body
 			Env2 = env(SymTable1,_),
 			reduce_stmt(config(Stmts,env(SymTable1,context(F,_))),Env3),
 			Env3 = env([_|SymTable2],_),
 			EnvOut = env(SymTable2,context(_,InLoop)),
-			lookup(F,SymTable2,id(_,_,_,R)
+			lookup(F,SymTable2,id(_,_,_,R)),
+			(R == null -> throw(invalid_expression(call(F,Args))) ; true)
 		)
 		; throw(wrong_number_of_argument(call(F,Args)))).
 	
@@ -282,7 +289,11 @@ reduce_stmt(config([],Env),Env):- !. % Base case
 reduce_stmt(config([call(F,[X])|Rest],Env),EnvOut) :- 
 	is_builtin(F,proc),!,
 	reduce_all(config(X,Env),config(V,Env1)),
-	p_call_builtin(F,[V]), %!!! Read stmt's input
+	catch(
+		p_call_builtin(F,[V]), %!!! Read stmt's input
+		type_mismatch(_),
+		throw(type_mismatch(call(F,[X])))
+	), %!!! Read stmt's input
 	reduce_stmt(config(Rest,Env1),EnvOut).
 
 reduce_stmt(config([call(F,Args)|Rest],Env),EnvOut) :-
@@ -294,7 +305,11 @@ reduce_stmt(config([call(F,Args)|Rest],Env),EnvOut) :-
 			% Add the parameters to the symbol table
 			create_env(Params,env([[]|SymTable],_),Env1),
 			% Bind the arguments to the parameters
-			bind_args(Params,Args1,Env1,Env2),
+			catch(
+				bind_args(Params,Args1,Env1,Env2),
+				type_mismatch(_),
+				throw(type_mismatch(call(F,Args)))
+			),
 			% Reduce the function body
 			Env2 = env(SymTable1,_),
 			reduce_stmt(config(Stmts,env(SymTable1,context(F,_))),Env3),
@@ -382,6 +397,10 @@ reduce_stmt(config([while(Cond,Stmt)|Rest],Env),EnvOut):-
 	) ; throw(type_mismatch(while(Cond,Stmt)))).
 
 %% -- Do-while statement ---
+reduce_stmt(config([do(Stmt,Cond)|Rest],Env),EnvOut):-
+	\+ is_list(Stmt),!,
+	reduce_stmt(config([do([Stmt],Cond)|Rest],Env),EnvOut).
+
 reduce_stmt(config([do(List,Cond)|Rest],Env),EnvOut):-
 	catch(
 		(
@@ -412,7 +431,6 @@ reduce_stmt(config([do(List,Cond)|Rest],Env),EnvOut):-
 			; throw(Error)
 		)
 	).
-	
 
 %% --- Loop statement ---
 reduce_stmt(config([loop(E,S)|Rest],Env),EnvOut):-
