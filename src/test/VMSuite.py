@@ -82,6 +82,6 @@ class VMSuite(unittest.TestCase):
         input = """
 [[var(a,integer)],
 [func(foo,[par(a,integer),par(b,integer)],integer,[assign(a,add(a,b)),assign(foo,a)])], 
-[assign(a,3),call(writeIntLn,[call(foo,[a,3])]),call(writeIntLn,[a])]]."""
+[assign(a,3),call(writeIntLn,[call(foo,[a,3])]),call(writeInt,[a])]]."""
         expect = "6\n3"
         self.assertTrue(TestVM.test(input, expect, 414))

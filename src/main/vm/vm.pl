@@ -29,8 +29,8 @@ lookup(Id, [_|L2], R):-
 
 % Bind the args to the parameters
 bind_args([],[],Env,Env):-!.
-bind_args([par(Id,_)|Params],[E|Args],Env,EnvOut):-
-	reduce_stmt(config([assign(Id,E)],Env),Env1),
+bind_args([par(Id,_)|Params],[Val|Args],Env,EnvOut):-
+	update_env(Id,Val,Env,Env1),
 	bind_args(Params,Args,Env1,EnvOut).
 
 eval_args([],[],_):-!.
@@ -244,7 +244,7 @@ reduce(config(call(F,[]),_),config(X,_)):-
 	is_builtin(F,func),!,
 	p_call_builtin(F,X).
 
-reduce(config(call(F,Args),Env),config(R,EnvOut)):-
+reduce(config(call(F,Args),Env),config(R,Env)):-
 	Env = env(SymTable,_),
 	lookup(F,SymTable,id(F,func,func(F,Params,_,Stmts),_)),!,
 	((length(Args, N),length(Params, M),N==M)-> % Check the number of arguments
@@ -256,11 +256,9 @@ reduce(config(call(F,Args),Env),config(R,EnvOut)):-
 			bind_args(Params,Args1,Env1,Env2),
 			% Reduce the function body
 			Env2 = env(SymTable1,_),
-			write("HERE: "), write(EnvOut),nl,
 			reduce_stmt(config(Stmts,env(SymTable1,F)),EnvOut),
 			EnvOut = env(SymTable2,_),
-			lookup(F,SymTable2,id(_,_,_,R)),
-			writeln(R)
+			lookup(F,SymTable2,id(_,_,_,R))
 		)
 		; throw(wrong_number_of_argument(call(F,Args))).
 	
