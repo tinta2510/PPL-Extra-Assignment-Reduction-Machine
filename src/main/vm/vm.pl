@@ -113,7 +113,7 @@ update_scope(Id,Val,[id(Id,const,_,_)|_],_,_):-
 	% Cannot assign to a constant
 	throw(cannot_assign(assign(Id,Val))).
 update_scope(Id,Val,[id(Id,func,Type,_)|T],[id(Id,func,Type,Val)|T],CurrFunc):-
-	!,nonvar(CurrFunc),CurrFunc == Id,
+	!,CurrFunc == Id,
 	Type = func(_,_,RetType,_),
 	(type_of(Val,RetType) -> true ; throw(type_mismatch(assign(Id,Val)))).
 update_scope(Id,Val,[id(Id,Kind,Type,_)|T],[id(Id,Kind,Type,Val)|T],_):-
@@ -251,7 +251,7 @@ reduce(config(call(F,X),_),config(X,_)):-
 	p_call_builtin(F,X).
 
 reduce(config(call(F,Args),Env),config(R,EnvOut)):-
-	Env = env(SymTable,context(_,InLoop)),
+	Env = env(SymTable,context(InitFunc,InLoop)),
 	lookup(F,SymTable,id(F,func,func(F,Params,_,Stmts),_)),!,
 	(length(Args, N),length(Params, M),N==M-> % Check the number of arguments
 		(
@@ -268,7 +268,7 @@ reduce(config(call(F,Args),Env),config(R,EnvOut)):-
 			Env2 = env(SymTable1,_),
 			reduce_stmt(config(Stmts,env(SymTable1,context(F,_))),Env3),
 			Env3 = env([_|SymTable2],_),
-			EnvOut = env(SymTable2,context(_,InLoop)),
+			EnvOut = env(SymTable2,context(InitFunc,InLoop)),
 			lookup(F,SymTable2,id(_,_,_,R)),
 			(R == null -> throw(invalid_expression(call(F,Args))) ; true)
 		)
