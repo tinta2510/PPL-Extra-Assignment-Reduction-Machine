@@ -394,7 +394,7 @@ reduce_stmt(config([do(List,Cond)|Rest],Env),EnvOut):-
 					; Next = Rest
 				) 
 				; throw(type_mismatch(do(List,Cond)))), 
-			reduce_stmt(config([do(List,Cond)|Rest],Env2),EnvOut)
+			reduce_stmt(config(Next,Env2),EnvOut)
 		),
 		Error,
 		(
