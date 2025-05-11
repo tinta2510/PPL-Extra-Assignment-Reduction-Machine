@@ -219,16 +219,18 @@ reduce(config(le(E1, E2), Env), config(R, EnvOut)) :-
 reduce(config(eql(E1, E2), Env), config(R, EnvOut)) :-
 	reduce_all(config(E1, Env), config(V1, Env1)),
 	reduce_all(config(E2, Env1), config(V2, EnvOut)),
-	( (integer(V1), integer(V2)); (float(V1), float(V2)); (boolean(V1), boolean(V2)) ) -> %??? Both be Float
-		(V1 =:= V2 -> R = true ; R = false)
-	; throw(type_mismatch(eql(E1,E2))).
+	(((integer(V1), integer(V2))
+	  ; (float(V1), float(V2))
+	  ; (boolean(V1), boolean(V2))) -> %??? Both be Float
+			(V1 == V2 -> R = true; R = false)
+			; throw(type_mismatch(eql(E1,E2)))).
 
 reduce(config(ne(E1, E2), Env), config(R, EnvOut)) :-
 	reduce_all(config(E1, Env), config(V1, Env1)),
 	reduce_all(config(E2, Env1), config(V2, EnvOut)),
 	( (integer(V1), integer(V2)); (float(V1), float(V2)); (boolean(V1), boolean(V2)) ) -> %??? Both be Float
-		(V1 =\= V2 -> R = true ; R = false)
-	; throw(type_mismatch(ne(E1,E2))).
+		(V1 \= V2 -> R = true ; R = false)
+		; throw(type_mismatch(ne(E1,E2))).
 %% --- Relational expressions - END ---
 
 %% --- Variable, Constant expressions - START ---
