@@ -102,7 +102,7 @@ create_env([proc(I,Params,Stmts)|L],env([L1|L2],T),EnvOut):-
 update_env(Id,_,env([],_),env(_,_)):-
 	throw(undeclare_identifier(Id)).
 
-update_env(Id,Val,env([Scope|L],context(CurrFunc,_)),env([ScopeOut|L],context(CurrFunc,_))):-
+update_env(Id,Val,env([Scope|L],context(CurrFunc,InLoop)),env([ScopeOut|L],context(CurrFunc,InLoop))):-
 	update_scope(Id,Val,Scope,ScopeOut,CurrFunc),!.
 
 update_env(Id,Val,env([Scope|L],Context),env([Scope|LOut],Context)):-
@@ -340,7 +340,6 @@ reduce_stmt(config([assign(Id,E)|Rest],Env),EnvOut) :-
 			)
 		)
 	),
-
 	reduce_stmt(config(Rest,Env2),EnvOut).
 
 %% --- Compound statement ---
