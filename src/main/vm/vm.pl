@@ -383,24 +383,59 @@ reduce_stmt(config([while(Cond,Stmt)|Rest],Env),EnvOut):-
 
 %% -- Do-while statement ---
 reduce_stmt(config([do(List,Cond)|Rest],Env),EnvOut):-
-	reduce_stmt(config(List,Env),Env1),
-	reduce_all(config(Cond,Env1),config(V,Env2)),
-	(boolean(V) -> 
-		(V == true -> 
-			Next = [do(List,Cond)|Rest]
-			; Next = Rest
-		) 
-		; throw(type_mismatch(do(List,Cond)))), 
-	reduce_stmt(config(Next, Env2), EnvOut).
+	catch(
+		(
+			Env = env(SymTable,context(Func,_)),
+			reduce_stmt(config(List,env(SymTable,context(Func,true))),Env1),
+			reduce_all(config(Cond,Env1),config(V,Env2)),
+			(boolean(V) -> 
+				(V == true -> 
+					Next = [do(List,Cond)|Rest]
+					; Next = Rest
+				) 
+				; throw(type_mismatch(do(List,Cond)))), 
+			reduce_stmt(config([do(List,Cond)|Rest],Env2),EnvOut)
+		),
+		Error,
+		(
+			Error = break(BreakEnv) ->
+				reduce_stmt(config(Rest, BreakEnv), EnvOut)
+			; Error = continue(ContEnv) ->
+				reduce_all(config(Cond, ContEnv), config(V, Env3)),
+				(boolean(V) ->
+					(V == true ->
+						reduce_stmt(config([do(List, Cond)|Rest], Env3), EnvOut)
+					;
+						reduce_stmt(config(Rest, Env3), EnvOut)
+					)
+				; throw(type_mismatch(do(List,Cond))))
+			; throw(Error)
+		)
+	).
+	
 
 %% --- Loop statement ---
 reduce_stmt(config([loop(E,S)|Rest],Env),EnvOut):-
 	reduce_all(config(E,Env),config(V,Env1)),
 	(integer(V) -> 
 		(V > 0  ->
-			reduce_stmt(config([S],Env1),Env2), 
-			V1 is V - 1,
-			reduce_stmt(config([loop(V1,S)|Rest], Env2), EnvOut)
+			catch(
+				(
+					Env1 = env(SymTable,context(Func,_)),
+					reduce_stmt(config([S],env(SymTable,context(Func,true))),Env2), 
+					V1 is V - 1,
+					reduce_stmt(config([loop(V1,S)|Rest], Env2), EnvOut)
+				),
+				Error,
+				(
+					Error = break(BreakEnv) ->
+						reduce_stmt(config(Rest, BreakEnv), EnvOut);
+					Error = continue(ContEnv) ->
+						V1 is V - 1,
+						reduce_stmt(config([loop(V1,S)|Rest], ContEnv), EnvOut);
+					throw(Error)
+				)
+			)
 		; 
 			reduce_stmt(config(Rest, Env1), EnvOut)
 		)
@@ -411,7 +446,7 @@ reduce_stmt(config([break(null)|_],env(SymTable,context(_,InLoop))),_):-
 	InLoop == true,!,
 	throw(break(env(SymTable,context(_,true)))).
 
-reduce_stmt(config([break(null)|_],Env),_):-
+reduce_stmt(config([break(null)|_],_),_):-
 	throw(break_not_in_loop(break(null))).
 
 %% --- Continue statement ---
