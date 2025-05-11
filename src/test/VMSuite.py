@@ -68,10 +68,10 @@ class VMSuite(unittest.TestCase):
     #     expect = "3"
     #     self.assertTrue(TestVM.test(input, expect, 411))
         
-    # def test_412(self):
-    #     input = """[[const(a,10)],[],[assign(a,3),call(writeInt,[a])]]."""
-    #     expect = "Cannot assign to a constant: assign(a,3)"
-    #     self.assertTrue(TestVM.test(input, expect, 412))
+    def test_412(self):
+        input = """[[const(a,10)],[],[assign(a,3),call(writeInt,[a])]]."""
+        expect = "Cannot assign to a constant: assign(a,3)"
+        self.assertTrue(TestVM.test(input, expect, 412))
         
     # def test_413(self):
     #     input = """[[var(c,integer),const(b,10),var(a,integer)],[],[assign(a,3),call(writeInt,[a])]]."""
@@ -85,3 +85,8 @@ class VMSuite(unittest.TestCase):
 [assign(a,3),call(writeIntLn,[call(foo,[a,3])]),call(writeInt,[a])]]."""
         expect = "6\n3"
         self.assertTrue(TestVM.test(input, expect, 414))
+        
+    def test_415(self):
+        input = """[[const(a,10),var(b,integer)],[],[assign(b,5),assign(a,b),call(writeInt,[a])]]."""
+        expect = "Cannot assign to a constant: assign(a,b)"
+        self.assertTrue(TestVM.test(input, expect, 415))

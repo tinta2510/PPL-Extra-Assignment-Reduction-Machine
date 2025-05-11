@@ -123,113 +123,113 @@ update_scope(Id,Val,[H|T],[H|NewT],CurrFunc):-
 
 % --- Expression reduction - START ---
 %% --- Numerical expressions - START ---
-reduce(config(sub(E),Env),config(R,Env)) :-  
-	reduce_all(config(E,Env),config(V,Env)),
+reduce(config(sub(E),Env),config(R,EnvOut)) :-  
+	reduce_all(config(E,Env),config(V,EnvOut)),
 	(number(V) -> R is -V ; throw(type_mismatch(sub(E)))).
 % Addition
-reduce(config(add(E1,E2),Env),config(R,Env)) :-
-	reduce_all(config(E1,Env),config(V1,Env)),
-	reduce_all(config(E2,Env),config(V2,Env)),
+reduce(config(add(E1,E2),Env),config(R,EnvOut)) :-
+	reduce_all(config(E1,Env),config(V1,Env1)),
+	reduce_all(config(E2,Env1),config(V2,EnvOut)),
 	(number(V1), number(V2) -> R is V1 + V2 ; throw(type_mismatch(add(E1,E2)))).
 
 % Subtraction
-reduce(config(sub(E1,E2),Env),config(R,Env)) :-  
-	reduce_all(config(E1,Env),config(V1,Env)),
-	reduce_all(config(E2,Env),config(V2,Env)),
+reduce(config(sub(E1,E2),Env),config(R,EnvOut)) :-  
+	reduce_all(config(E1,Env),config(V1,Env1)),
+	reduce_all(config(E2,Env1),config(V2,EnvOut)),
 	(number(V1), number(V2) -> R is V1 - V2 ; throw(type_mismatch(sub(E1,E2)))).
 
 % Multiplication
-reduce(config(times(E1,E2),Env),config(R,Env)) :-  
-	reduce_all(config(E1,Env),config(V1,Env)),
-	reduce_all(config(E2,Env),config(V2,Env)),
+reduce(config(times(E1,E2),Env),config(R,EnvOut)) :-  
+	reduce_all(config(E1,Env),config(V1,Env1)),
+	reduce_all(config(E2,Env1),config(V2,EnvOut)),
 	(number(V1), number(V2) -> R is V1 * V2 ; throw(type_mismatch(times(E1,E2)))).
 
 % Real division
-reduce(config(rdiv(E1,E2),Env),config(R,Env)) :-
-	reduce_all(config(E1,Env),config(V1,Env)),
-	reduce_all(config(E2,Env),config(V2,Env)),
+reduce(config(rdiv(E1,E2),Env),config(R,EnvOut)) :-
+	reduce_all(config(E1,Env),config(V1,Env1)),
+	reduce_all(config(E2,Env1),config(V2,EnvOut)),
 	(number(V1), number(V2) -> R is V1 / V2 ; throw(type_mismatch(rdiv(E1,E2)))).
 
 % Integer division
-reduce(config(idiv(E1,E2),Env),config(R,Env)) :-  
-	reduce_all(config(E1,Env),config(V1,Env)),
-	reduce_all(config(E2,Env),config(V2,Env)),
+reduce(config(idiv(E1,E2),Env),config(R,EnvOut)) :-  
+	reduce_all(config(E1,Env),config(V1,Env1)),
+	reduce_all(config(E2,Env1),config(V2,EnvOut)),
 	(integer(V1), integer(V2) -> R is V1 div V2 ; throw(type_mismatch(idiv(E1,E2)))).
 
 % Modulo
-reduce(config(imod(E1,E2),Env),config(R,Env)) :-  
-	reduce_all(config(E1,Env),config(V1,Env)),
-	reduce_all(config(E2,Env),config(V2,Env)),
+reduce(config(imod(E1,E2),Env),config(R,EnvOut)) :-  
+	reduce_all(config(E1,Env),config(V1,Env1)),
+	reduce_all(config(E2,Env1),config(V2,EnvOut)),
 	(integer(V1), integer(V2) -> R is V1 mod V2 ; throw(type_mismatch(imod(E1,E2)))).
 %% --- Numerical expressions - END ---
 
 %% --- Logical expressions - START ---
-reduce(config(bnot(E),Env),config(R,Env)) :-  
-	reduce_all(config(E,Env),config(V,Env)),
+reduce(config(bnot(E),Env),config(R,EnvOut)) :-  
+	reduce_all(config(E,Env),config(V,EnvOut)),
 	(boolean(V) -> (V == true -> R = false ; R = true)).
 
-reduce(config(band(E1, E2), Env), config(R, Env)) :-
-	reduce_all(config(E1, Env), config(V1, Env)),
+reduce(config(band(E1, E2), Env), config(R, EnvOut)) :-
+	reduce_all(config(E1, Env), config(V1, Env1)),
 	(boolean(V1) -> (
 		V1 == false -> R = false ; 
-		reduce_all(config(E2, Env), config(V2, Env)),
+		reduce_all(config(E2, Env1), config(V2, EnvOut)),
 		(boolean(V2) -> (V2 == false -> R = false ; R = true) 
 			; throw(type_mismatch(band(E1,E2))))
 	) ; throw(type_mismatch(band(E1,E2)))).
 
-reduce(config(bor(E1, E2), Env), config(R, Env)) :-
-	reduce_all(config(E1, Env), config(V1, Env)),
+reduce(config(bor(E1, E2), Env), config(R, EnvOut)) :-
+	reduce_all(config(E1, Env), config(V1, Env1)),
 	(boolean(V1) -> (
 		V1 == true -> R = true ;
-		reduce_all(config(E2, Env), config(V2, Env)),
+		reduce_all(config(E2, Env1), config(V2, EnvOut)),
 		(boolean(V2) -> (V2 == true -> R = true ; R = false) 
 			; throw(type_mismatch(bor(E1,E2))))
 	) ; throw(type_mismatch(bor(E1,E2)))).
 %% --- Logical expressions - END ---
 
 %% --- Relational expressions - START ---
-reduce(config(greater(E1, E2), Env), config(R, Env)) :-
-    reduce_all(config(E1, Env), config(V1, Env)),
-    reduce_all(config(E2, Env), config(V2, Env)),
+reduce(config(greater(E1, E2), Env), config(R, EnvOut)) :-
+    reduce_all(config(E1, Env), config(V1, Env1)),
+    reduce_all(config(E2, Env1), config(V2, EnvOut)),
     (number(V1), number(V2) -> (V1 > V2 -> R = true ; R = false)
     ; throw(type_mismatch(greater(E1,E2)))).
 
-reduce(config(less(E1, E2), Env), config(R, Env)) :-
-	reduce_all(config(E1, Env), config(V1, Env)),
-	reduce_all(config(E2, Env), config(V2, Env)),
+reduce(config(less(E1, E2), Env), config(R, EnvOut)) :-
+	reduce_all(config(E1, Env), config(V1, Env1)),
+	reduce_all(config(E2, Env1), config(V2, EnvOut)),
 	(number(V1), number(V2) -> (V1 < V2 -> R = true ; R = false)
 	; throw(type_mismatch(less(E1,E2)))).
 
-reduce(config(ge(E1, E2), Env), config(R, Env)) :-
-	reduce_all(config(E1, Env), config(V1, Env)),
-	reduce_all(config(E2, Env), config(V2, Env)),
+reduce(config(ge(E1, E2), Env), config(R, EnvOut)) :-
+	reduce_all(config(E1, Env), config(V1, Env1)),
+	reduce_all(config(E2, Env1), config(V2, EnvOut)),
 	(number(V1), number(V2) -> (V1 >= V2 -> R = true ; R = false)
 	; throw(type_mismatch(ge(E1,E2)))).
 
-reduce(config(le(E1, E2), Env), config(R, Env)) :-
-	reduce_all(config(E1, Env), config(V1, Env)),
-	reduce_all(config(E2, Env), config(V2, Env)),
+reduce(config(le(E1, E2), Env), config(R, EnvOut)) :-
+	reduce_all(config(E1, Env), config(V1, Env1)),
+	reduce_all(config(E2, Env1), config(V2, EnvOut)),
 	(number(V1), number(V2) -> (V1 =< V2 -> R = true ; R = false)
 	; throw(type_mismatch(le(E1,E2)))).
 
 
-reduce(config(eql(E1, E2), Env), config(R, Env)) :-
-	reduce_all(config(E1, Env), config(V1, Env)),
-	reduce_all(config(E2, Env), config(V2, Env)),
+reduce(config(eql(E1, E2), Env), config(R, EnvOut)) :-
+	reduce_all(config(E1, Env), config(V1, Env1)),
+	reduce_all(config(E2, Env1), config(V2, EnvOut)),
 	( (integer(V1), integer(V2)); (float(V1), float(V2)); (boolean(V1), boolean(V2)) ) -> %??? Both be Float
 		(V1 =:= V2 -> R = true ; R = false)
 	; throw(type_mismatch(eql(E1,E2))).
 
-reduce(config(ne(E1, E2), Env), config(R, Env)) :-
-	reduce_all(config(E1, Env), config(V1, Env)),
-	reduce_all(config(E2, Env), config(V2, Env)),
+reduce(config(ne(E1, E2), Env), config(R, EnvOut)) :-
+	reduce_all(config(E1, Env), config(V1, Env1)),
+	reduce_all(config(E2, Env1), config(V2, EnvOut)),
 	( (integer(V1), integer(V2)); (float(V1), float(V2)); (boolean(V1), boolean(V2)) ) -> %??? Both be Float
 		(V1 =\= V2 -> R = true ; R = false)
 	; throw(type_mismatch(ne(E1,E2))).
 %% --- Relational expressions - END ---
 
 %% --- Variable, Constant expressions - START ---
-reduce(config(Id,env(L,_)),config(Value,_)):-
+reduce(config(Id,env(L,F)),config(Value,env(L,F))):-
 	atom(Id), %??? simple identifier
 	(lookup(Id,L,id(Id,Kind,_,Value)) -> % Lookup in the environment
 		((Kind \= var, Kind \= const, Kind \= par -> 
@@ -244,7 +244,7 @@ reduce(config(call(F,[]),_),config(X,_)):-
 	is_builtin(F,func),!,
 	p_call_builtin(F,X).
 
-reduce(config(call(F,Args),Env),config(R,Env)):-
+reduce(config(call(F,Args),Env),config(R,EnvOut)):-
 	Env = env(SymTable,_),
 	lookup(F,SymTable,id(F,func,func(F,Params,_,Stmts),_)),!,
 	((length(Args, N),length(Params, M),N==M)-> % Check the number of arguments
@@ -256,7 +256,8 @@ reduce(config(call(F,Args),Env),config(R,Env)):-
 			bind_args(Params,Args1,Env1,Env2),
 			% Reduce the function body
 			Env2 = env(SymTable1,_),
-			reduce_stmt(config(Stmts,env(SymTable1,F)),EnvOut),
+			reduce_stmt(config(Stmts,env(SymTable1,F)),Env3),
+			Env3 = env([_|SymTable2],_),
 			EnvOut = env(SymTable2,_),
 			lookup(F,SymTable2,id(_,_,_,R))
 		)
@@ -268,9 +269,9 @@ reduce(config(call(F,_),_),_):-
 
 
 reduce_all(config(V,Env),config(V,Env)):- (number(V);boolean(V);string(V)),!.
-reduce_all(config(E,Env),config(E2,Env)):-
-	reduce(config(E,Env),config(E1,Env)),!,
-	reduce_all(config(E1,Env),config(E2,Env)).
+reduce_all(config(E,Env),config(E2,EnvOut)):-
+	reduce(config(E,Env),config(E1,Env1)),!,
+	reduce_all(config(E1,Env1),config(E2,EnvOut)).
 
 
 % --- Statement reduction - START ---
@@ -278,21 +279,26 @@ reduce_stmt(config([],Env),Env):- !. % Base case
 %% --- Procedure-Call - START ---
 reduce_stmt(config([call(F,[X])|Body],Env),EnvOut) :- 
 	is_builtin(F,proc),!,
-	reduce_all(config(X,Env),config(V,Env)),
+	reduce_all(config(X,Env),config(V,Env1)),
 	p_call_builtin(F,[V]), %!!! Read stmt's input
-	reduce_stmt(config(Body,Env),EnvOut).
+	reduce_stmt(config(Body,Env1),EnvOut).
 %% --- Procedure-Call - END ---
 
 %% --- Assignment - START ---
 reduce_stmt(config([assign(Id,E)|Body],Env),EnvOut) :-
-	reduce_all(config(E,Env),config(V,Env)),
+	reduce_all(config(E,Env),config(V,Env1)),
 	catch(
-		update_env(Id,V,Env,Env1),
+		update_env(Id,V,Env1,Env2), 
 		Error,
 		(
-			Error =.. [ErrName|_],
-			NewError =.. [ErrName|[assign(Id,V)]],
-			throw(NewError)
+			(   compound(Error),
+				Error =.. [ErrName, assign(_,_)]
+			->
+				NewError =.. [ErrName, assign(Id, E)],
+				throw(NewError)
+			;
+				throw(Error)  % re-throw all other errors
+			)
 		)
 	),
-	reduce_stmt(config(Body,Env1),EnvOut).
+	reduce_stmt(config(Body,Env2),EnvOut).
