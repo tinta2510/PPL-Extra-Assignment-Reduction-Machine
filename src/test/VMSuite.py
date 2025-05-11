@@ -3,822 +3,483 @@ from TestUtils import TestVM
 
 
 class VMSuite(unittest.TestCase):
-    # def test_1(self):
-    #     input = """
-    #         [[var(x,integer)],[],
-    #         [assign(x,10),call(writeInt,[x])]]."""
-    #     expect = "10"
-    #     self.assertTrue(TestVM.test(input, expect, 1))
+    def test_401(self):        
+        input = """[[],[],[call(writeInt,[3])]]."""
+        expect = "3"
+        self.assertTrue(TestVM.test(input, expect, 401))
 
-    # def test_2(self):
-    #     input = """[[const(a,5)],[],[call(writeInt,[a])]]."""
-    #     expect = "5"
-    #     self.assertTrue(TestVM.test(input, expect, 2))
+    def test_402(self):        
+        input = """[[],[],[call(writeInt,[add(3,1)])]]."""
+        expect = "4"
+        self.assertTrue(TestVM.test(input, expect, 402))
 
-    # def test_3(self):
-    #     input = """[[],[func(f,[],float,[assign(f,2.5)])],[call(writeReal,[add(call(f,[]),1.5)])]]."""
-    #     expect = "4.0"
-    #     self.assertTrue(TestVM.test(input, expect, 3))
+    def test_403(self):        
+        input = """[[var(a,integer),var(b,integer),var(a,float)],[],[call(writeInt,[1])]]."""
+        expect = "Redeclared identifier: var(a,float)"
+        self.assertTrue(TestVM.test(input, expect, 403))
 
-    # def test_4(self):
-    #     input = """
-    #     [[var(x,integer)],[proc(p,[par(a,integer)],[assign(x,a),call(writeInt,[x])])],[call(p,[10])]]."""
-    #     expect = "10"
-    #     self.assertTrue(TestVM.test(input, expect, 4))
+    def test_404(self):        
+        input = """[[],[],[call(writeInt,[sub(3,1)])]]."""
+        expect = "2"
+        self.assertTrue(TestVM.test(input, expect, 404))
 
-    # def test_5(self):
-    #     input = """[[var(a,boolean),var(b,boolean)],[],[assign(a,true),assign(b,false),call(writeBool,[band(a,b)])]]."""
-    #     expect = "false"
-    #     self.assertTrue(TestVM.test(input, expect, 5))
+    def test_405(self):        
+        input = """[[],[],[call(writeInt,[add(4,sub(3,1))])]]."""
+        expect = "6"
+        self.assertTrue(TestVM.test(input, expect, 405))
+        
+    def test_406(self):
+        input = """[[],[],[call(writeReal,[10.0])]]."""
+        expect = "10.0"
+        self.assertTrue(TestVM.test(input, expect, 406))
+        
+    def test_407(self):
+        input = """[[const(a,10)],[],[call(writeInt,[a])]]."""
+        expect = "10"   
+        self.assertTrue(TestVM.test(input, expect, 407))
+        
+    def test_408(self):
+        input = """[[var(a,integer)],[],[call(writeInt,[a])]]."""
+        expect = "Invalid expression: a"   
+        self.assertTrue(TestVM.test(input, expect, 408))
 
-    # def test_6(self):
-    #     input = """[[var(a,boolean)],[],[assign(a,false),call(writeBool,[band(a,3)])]]."""
-    #     expect = "false"
-    #     self.assertTrue(TestVM.test(input, expect, 6))
+    def test_409(self):
+        input = """[[],[],[
+            call(writeIntLn,[times(3,2)]),
+            call(writeRealLn,[rdiv(3,2)]),
+            call(writeIntLn,[sub(-10)]),
+            call(writeIntLn,[idiv(5,2)]),
+            call(writeInt,[imod(5,2)])
+        ]]."""
+        expect = "6\n1.5\n10\n2\n1"
+        self.assertTrue(TestVM.test(input, expect, 409))
+        
+    def test_410(self):
+        input = """[[],[],[
+            call(writeBool,[bnot(true)]),
+            call(writeBool,[band(true,false)]),
+            call(writeBool,[bor(true,false)])
+            ]]."""
+        expect = "falsefalsetrue"
+        self.assertTrue(TestVM.test(input, expect, 410))
 
-    # def test_7(self):
-    #     input = """[[var(i,integer)],[],[assign(i,0),while(less(i,3),assign(i,add(i,1))),call(writeInt,[i])]]."""
-    #     expect = "3"
-    #     self.assertTrue(TestVM.test(input, expect, 7))
+    def test_411(self):
+        input = """[[var(a,integer)],[],[assign(a,3),call(writeInt,[a])]]."""
+        expect = "3"
+        self.assertTrue(TestVM.test(input, expect, 411))
+        
+    def test_412(self):
+        input = """[[const(a,10)],[],[assign(a,3),call(writeInt,[a])]]."""
+        expect = "Cannot assign to a constant: assign(a,3)"
+        self.assertTrue(TestVM.test(input, expect, 412))
+        
+    def test_413(self):
+        input = """[[var(c,integer),const(b,10),var(a,integer)],[],[assign(a,3),call(writeInt,[a])]]."""
+        expect = "3"
+        self.assertTrue(TestVM.test(input, expect, 413))
+        
+    def test_414(self):
+        input = """
+[[var(a,integer)],
+[func(foo,[par(a,integer),par(b,integer)],integer,[assign(a,add(a,b)),assign(foo,a)])], 
+[assign(a,3),call(writeIntLn,[call(foo,[a,3])]),call(writeInt,[a])]]."""
+        expect = "6\n3"
+        self.assertTrue(TestVM.test(input, expect, 414))
 
-    # def test_8(self):
-    #     input = """[[var(i,integer)],[],[assign(i,0),loop(3,assign(i,add(i,1))),call(writeInt,[i])]]."""
-    #     expect = "3"
-    #     self.assertTrue(TestVM.test(input, expect, 8))
-
-    # def test_9(self):
-    #     input = """[[var(i,integer)],[],[assign(i,0),while(true,block([],[if(eql(i,2),break(null)),assign(i,add(i,1))])),call(writeInt,[i])]]."""
-    #     expect = "2"
-    #     self.assertTrue(TestVM.test(input, expect, 9))
-
-    # def test_10(self):
-    #     input = """[[var(i,integer)],[],[assign(i,0),do([assign(i,add(i,1)),if(eql(i,2),continue(null))],less(i,3)),call(writeInt,[i])]]."""
-    #     expect = "3"
-    #     self.assertTrue(TestVM.test(input, expect, 10))
-
-    # def test_11(self):
-    #     input = """[[var(x,integer)],[],[block([var(x,integer)], [assign(x,20),call(writeInt,[x])])]]."""
-    #     expect = "20"
-    #     self.assertTrue(TestVM.test(input, expect, 11))
-
-    # def test_12(self):
-    #     input = """[[var(x,integer)],[],[assign(x,1),if(eql(x,1),call(writeInt,[10]),call(writeInt,[20]))]]."""
-    #     expect = "10"
-    #     self.assertTrue(TestVM.test(input, expect, 12))
-
-    # def test_13(self):
-    #     input = """[[var(x,integer)],[],[assign(x,1),if(eql(x,2),call(writeInt,[10]),call(writeInt,[20]))]]."""
-    #     expect = "20"
-    #     self.assertTrue(TestVM.test(input, expect, 13))
-
-    # def test_14(self):
-    #     input = """[[var(x,integer),const(y,5)],[],[
-    #         assign(x,add(y,10)),
-    #         call(writeIntLn,[x]),
-    #         call(writeInt,[y])
-    #     ]]."""
-    #     expect = "15\n5"
-    #     self.assertTrue(TestVM.test(input, expect, 14))
-
-    # def test_15(self):
-    #     input = """[[],
-    #         [func(sum,[par(a,integer),par(b,integer)],integer,[assign(sum,add(a,b))])],
-    #         [call(writeIntLn,[call(sum,[2,3])]), call(writeInt,[call(sum,[10,5])])]]."""
-    #     expect = "5\n15"
-    #     self.assertTrue(TestVM.test(input, expect, 15))
-
-    # def test_16(self):
-    #     input = """[[var(i,integer)],[],[
-    #         assign(i,0),
-    #         while(less(i,3),
-    #             block([],[
-    #                 call(writeIntLn,[i]),
-    #                 assign(i,add(i,1))
-    #             ])
-    #         )
-    #     ]]."""
-    #     expect = "0\n1\n2\n"
-    #     self.assertTrue(TestVM.test(input, expect, 16))
-
-    # def test_17(self):
-    #     input = """[[var(i,integer)],[],[
-    #         assign(i,0),
-    #         do([
-    #             call(writeIntLn,[i]),
-    #             assign(i,add(i,1))
-    #         ], less(i,3))
-    #     ]]."""
-    #     expect = "0\n1\n2\n"
-    #     self.assertTrue(TestVM.test(input, expect, 17))
-
-    # def test_18(self):
-    #     input = """[[var(i,integer)],[],[
-    #         assign(i,0),
-    #         loop(3, block([],[
-    #             call(writeIntLn,[i]),
-    #             assign(i,add(i,10))
-    #         ]))
-    #     ]]."""
-    #     expect = "0\n10\n20\n"
-    #     self.assertTrue(TestVM.test(input, expect, 18))
-
-    # def test_19(self):
-    #     input = """[[var(i,integer)],[],[
-    #         assign(i,0),
-    #         while(less(i,5),
-    #             block([],[
-    #                 if(eql(i,3), break(null)),
-    #                 call(writeIntLn,[i]),
-    #                 assign(i,add(i,1))
-    #             ])
-    #         )
-    #     ]]."""
-    #     expect = "0\n1\n2\n"
-    #     self.assertTrue(TestVM.test(input, expect, 19))
-
-    # def test_20(self):
-    #     input = """[[var(i,integer)],[],[
-    #         assign(i,0),
-    #         while(less(i,5),
-    #             block([],[
-    #                 assign(i,add(i,1)),
-    #                 if(eql(i,3), continue(null)),
-    #                 call(writeIntLn,[i])
-    #             ])
-    #         )
-    #     ]]."""
-    #     expect = "1\n2\n4\n5\n"
-    #     self.assertTrue(TestVM.test(input, expect, 20))
-
-    # def test_21(self):
-    #     input = """[[var(a,integer)],[],[
-    #         assign(a,call(undefined_func,[]))
-    #     ]]."""
-    #     expect = "Undeclared function: call(undefined_func,[])"
-    #     self.assertTrue(TestVM.test(input, expect, 21))
-
-    # def test_22(self):
-    #     input = """[[var(a,integer)],[],[
-    #         assign(b,1)
-    #     ]]."""
-    #     expect = "Undeclared identifier: b"
-    #     self.assertTrue(TestVM.test(input, expect, 22))
-
-    # def test_23(self):
-    #     input = """[[const(a,3)],[],[
-    #         assign(a,5)
-    #     ]]."""
-    #     expect = "Cannot assign to a constant: assign(a,5)"
-    #     self.assertTrue(TestVM.test(input, expect, 23))
-
-    # def test_24(self):
-    #     input = """[[var(a,integer)],[],[
-    #         assign(a,true)
-    #     ]]."""
-    #     expect = "Type mismatch: assign(a,true)"
-    #     self.assertTrue(TestVM.test(input, expect, 24))
-
-    # def test_25(self):
-    #     input = """[[var(x,integer),var(x,real)],[],[]]."""
-    #     expect = "Redeclared identifier: var(x,real)"
-    #     self.assertTrue(TestVM.test(input, expect, 25))
-
-    # def test_26(self):
-    #     input = """[[],[func(foo,[],integer,[]),proc(foo,[],[])],[]]."""
-    #     expect = "Redeclared procedure: foo"
-    #     self.assertTrue(TestVM.test(input, expect, 26))
+    def test_415(self):
+        input = """[[const(a,10),var(b,integer)],[],[assign(b,5),assign(a,b),call(writeInt,[a])]]."""
+        expect = "Cannot assign to a constant: assign(a,b)"
+        self.assertTrue(TestVM.test(input, expect, 415))
     
-    # def test_27(self):
-    #     input = """[[var(a,integer)],[],[
-    #         assign(a,sub(10,3)),
-    #         call(writeIntLn,[a])
-    #     ]]."""
-    #     expect = "7\n"
-    #     self.assertTrue(TestVM.test(input, expect, 27))
+    def test_416(self):
+        input = """[
+            [var(x, integer)],
+            [func(addTwo, [par(a, integer)], integer, [
+                assign(addTwo, add(a, 2))
+            ])],
+            [assign(x, call(addTwo, [3])), call(writeInt, [x])]
+        ]."""
+        expect = "5"
+        self.assertTrue(TestVM.test(input, expect, 416))
 
-    # def test_28(self):
-    #     input = """[[var(a,integer)],[],[
-    #         assign(a,times(4,2)),
-    #         call(writeIntLn,[a])
-    #     ]]."""
-    #     expect = "8\n"
-    #     self.assertTrue(TestVM.test(input, expect, 28))
+    def test_417(self):
+        input = """[
+            [var(x, integer)],
+            [],
+            [assign(y, 5)]
+        ]."""
+        expect = "Undeclared identifier: y"
+        self.assertTrue(TestVM.test(input, expect, 417))
 
-    # def test_29(self):
-    #     input = """[[var(a,float)],[],[
-    #         assign(a,rdiv(5,2)),
-    #         call(writeRealLn,[a])
-    #     ]]."""
-    #     expect = "2.5\n"
-    #     self.assertTrue(TestVM.test(input, expect, 29))
+    def test_418(self):
+        input = """[
+            [],
+            [func(identity, [par(x, integer)], integer, [assign(identity, x)])],
+            [call(writeInt, [call(identity, [10])])]
+        ]."""
+        expect = "10"
+        self.assertTrue(TestVM.test(input, expect, 418))
+        
 
-    # def test_30(self):
-    #     input = """[[var(a,integer)],[],[
-    #         assign(a,idiv(5,2)),
-    #         call(writeIntLn,[a])
-    #     ]]."""
-    #     expect = "2\n"
-    #     self.assertTrue(TestVM.test(input, expect, 30))
+    def test_419(self):
+        input = """[
+            [],
+            [func(double, [par(x, integer)], integer, [assign(double, times(x, 2))])],
+            [call(writeInt, [call(double, [3, 5])])]
+        ]."""
+        expect = "Wrong number of arguments: call(double,[3,5])"
+        self.assertTrue(TestVM.test(input, expect, 419))
 
-    # def test_31(self):
-    #     input = """[[var(a,integer)],[],[
-    #         assign(a,imod(5,3)),
-    #         call(writeIntLn,[a])
-    #     ]]."""
-    #     expect = "2\n"
-    #     self.assertTrue(TestVM.test(input, expect, 31))
-
-    # def test_32(self):
-    #     input = """[[var(a,boolean)],[],[
-    #         assign(a,bnot(false)),
-    #         call(writeBool,[a])
-    #     ]]."""
-    #     expect = "true"
-    #     self.assertTrue(TestVM.test(input, expect, 32))
-
-    # def test_33(self):
-    #     input = """[[var(a,boolean),var(b,boolean)],[],[
-    #         assign(a,true),
-    #         assign(b,false),
-    #         call(writeBool,[bor(a,b)])
-    #     ]]."""
-    #     expect = "true"
-    #     self.assertTrue(TestVM.test(input, expect, 33))
-
-    # def test_34(self):
-    #     input = """[[var(a,integer)],[],[
-    #         assign(a,add(true,1))
-    #     ]]."""
-    #     expect = "Type mismatch: add(true,1)"
-    #     self.assertTrue(TestVM.test(input, expect, 34))
-
-    # def test_35(self):
-    #     input = """[[var(a,boolean)],[],[
-    #         assign(a,greater(true,1))
-    #     ]]."""
-    #     expect = "Type mismatch: greater(true,1)"
-    #     self.assertTrue(TestVM.test(input, expect, 35))
-
-    # def test_36(self):
-    #     input = """[[var(a,integer)],[],[
-    #         assign(a,greater(2,1)),
-    #         call(writeIntLn,[a])
-    #     ]]."""
-    #     expect = "Type mismatch: assign(a,greater(2,1))"
-    #     self.assertTrue(TestVM.test(input, expect, 36))
-
-    # def test_37(self):
-    #     input = """[[var(x,boolean)],[],[
-    #         assign(x,eql(1,true))
-    #     ]]."""
-    #     expect = "Type mismatch: eql(1,true)"
-    #     self.assertTrue(TestVM.test(input, expect, 37))
-
-    # def test_38(self):
-    #     input = """[[var(a,integer),var(b,float),var(c,integer)],[],[
-    #         assign(a,add(2,3)),
-    #         assign(b,rdiv(5.0,2)),
-    #         assign(c,imod(10,3)),
-    #         call(writeIntLn,[a]),
-    #         call(writeRealLn,[b]),
-    #         call(writeIntLn,[c])
-    #     ]]."""
-    #     expect = "5\n2.5\n1\n"
-    #     self.assertTrue(TestVM.test(input, expect, 38))
-
-    # def test_39(self):
-    #     input = """[[var(a,boolean),var(b,boolean),var(c,boolean)],[],[
-    #         assign(a,true),
-    #         assign(b,false),
-    #         assign(c,bor(bnot(a),b)),
-    #         call(writeBool,[c])
-    #     ]]."""
-    #     expect = "false"
-    #     self.assertTrue(TestVM.test(input, expect, 39))
-
-    # def test_40(self):
-    #     input = """[[var(a,boolean),var(b,boolean),var(x,integer),var(y,float)],[],[
-    #         assign(x,3),
-    #         assign(y,3.0),
-    #         assign(a,ge(x,y)),
-    #         assign(b,le(x,y)),
-    #         call(writeBool,[a]),
-    #         call(writeBool,[b])
-    #     ]]."""
-    #     expect = "truetrue"
-    #     self.assertTrue(TestVM.test(input, expect, 40))
-
-    # def test_41(self):
-    #     input = """[[var(a,boolean),var(b,boolean)],[],[
-    #         assign(a,eql(true,true)),
-    #         assign(b,ne(false,true)),
-    #         call(writeBool,[a]),
-    #         call(writeBool,[b])
-    #     ]]."""
-    #     expect = "truetrue"
-    #     self.assertTrue(TestVM.test(input, expect, 41))
-
-    # def test_42(self):
-    #     input = """[[],
-    #     [func(inc,[par(x,integer)],integer,[assign(inc,add(x,1))])],
-    #     [block(
-    #         [var(a,integer)],[
-    #         assign(a,add(call(inc,[2]),3)),
-    #         call(writeIntLn,[a])])
-    #     ]]."""
-    #     expect = "6\n"
-    #     self.assertTrue(TestVM.test(input, expect, 42))
-
-    # def test_43(self):
-    #     input = """[[var(a,integer),var(b,integer),var(c,integer),var(d,float),var(e,integer),var(f,integer)],[],[
-    #         assign(a,add(1,2)),
-    #         assign(b,sub(5)),
-    #         assign(c,times(2,4)),
-    #         assign(d,rdiv(5.0,2)),
-    #         assign(e,idiv(9,2)),
-    #         assign(f,imod(7,4)),
-    #         call(writeIntLn,[a]),
-    #         call(writeIntLn,[b]),
-    #         call(writeIntLn,[c]),
-    #         call(writeRealLn,[d]),
-    #         call(writeIntLn,[e]),
-    #         call(writeIntLn,[f])
-    #     ]]."""
-    #     expect = "3\n-5\n8\n2.5\n4\n3\n"
-    #     self.assertTrue(TestVM.test(input, expect, 43))
-
-    # def test_44(self):
-    #     input = """[[var(a,boolean),var(b,boolean),var(c,boolean),var(d,boolean)],[],[
-    #         assign(a,true),
-    #         assign(b,false),
-    #         assign(c,band(a,b)),
-    #         assign(d,bor(a,b)),
-    #         call(writeBool,[bnot(b)]),
-    #         call(writeLn,[]),
-    #         call(writeBool,[c]),
-    #         call(writeLn,[]),
-    #         call(writeBool,[d]),
-    #         call(writeLn,[])
-    #     ]]."""
-    #     expect = "true\nfalse\ntrue\n"
-    #     self.assertTrue(TestVM.test(input, expect, 44))
-
-    # def test_45(self):
-    #     input = """[[var(a,boolean),var(b,boolean),var(c,boolean),var(d,boolean)],[],[
-    #         assign(a,greater(4,2)),
-    #         assign(b,less(2,4)),
-    #         assign(c,ge(3,3)),
-    #         assign(d,le(5,6)),
-    #         call(writeBool,[a]),
-    #         call(writeLn,[]),
-    #         call(writeBool,[b]),
-    #         call(writeLn,[]),
-    #         call(writeBool,[c]),
-    #         call(writeLn,[]),
-    #         call(writeBool,[d]),
-    #         call(writeLn,[])
-    #     ]]."""
-    #     expect = "true\ntrue\ntrue\ntrue\n"
-    #     self.assertTrue(TestVM.test(input, expect, 45))
-
-    # def test_46(self):
-    #     input = """[[var(a,boolean),var(b,boolean)],[],[
-    #         assign(a,eql(3,3)),
-    #         assign(b,ne(false,true)),
-    #         call(writeBool,[a]),
-    #         call(writeLn,[]),
-    #         call(writeBool,[b]),
-    #         call(writeLn,[])
-    #     ]]."""
-    #     expect = "true\ntrue\n"
-    #     self.assertTrue(TestVM.test(input, expect, 46))
-
-    # def test_47(self):
-    #     input = """[[],
-    #     [func(sum2,[par(x,integer),par(y,integer)],integer,[assign(sum2,add(x,y))])],
-    #     [block(
-    #         [var(a,integer),var(b,integer)],
-    #         [
-    #             assign(a,call(sum2,[2,3])),
-    #             assign(b,times(call(sum2,[1,2]),2)),
-    #             call(writeIntLn,[a]),
-    #             call(writeIntLn,[b])
-    #         ])
-    #     ]]."""
-    #     expect = "5\n6\n"
-    #     self.assertTrue(TestVM.test(input, expect, 47))
-
-    # def test_48(self):
-    #     input = """[[],
-    #     [func(inc,[par(x,integer)],integer,[assign(inc,add(x,1))])],
-    #     [block(
-    #         [var(a,integer),var(b,integer),var(c,float)],
-    #             [
-    #             assign(a,5),
-    #             assign(b,call(inc,[a])),
-    #             assign(c,rdiv(add(b,5.0),2)),
-    #             call(writeIntLn,[a]),
-    #             call(writeIntLn,[b]),
-    #             call(writeRealLn,[c])
-    #         ])
-    #     ]]."""
-    #     expect = "5\n6\n5.5\n"
-    #     self.assertTrue(TestVM.test(input, expect, 48))
-
-    # def test_49(self):
-    #     input = """[[var(a,boolean),var(b,boolean),var(c,boolean)],[],[
-    #         assign(a,false),
-    #         assign(b,true),
-    #         assign(c,bor(band(a,b),bnot(a))),
-    #         call(writeBool,[c]),
-    #         call(writeLn,[])
-    #     ]]."""
-    #     expect = "true\n"
-    #     self.assertTrue(TestVM.test(input, expect, 49))
-
-    # def test_50(self):
-    #     input = """[[var(a,boolean),var(b,boolean)],
-    #     [func(get3,[],integer,[assign(get3,3)])],
-    #     [
-    #         assign(a,le(call(get3,[]),3.0)),
-    #         assign(b,greater(4.5,call(get3,[]))),
-    #         call(writeBool,[a]),
-    #         call(writeLn,[]),
-    #         call(writeBool,[b]),
-    #         call(writeLn,[])
-    #     ]]."""
-    #     expect = "true\ntrue\n"
-    #     self.assertTrue(TestVM.test(input, expect, 50))
-
-    # def test_51(self):
-    #     input = """[[],
-    #     [func(equalOr,[par(x,boolean),par(y,boolean)],boolean,[
-    #         assign(equalOr,bor(eql(x,y),band(x,y)))
-    #     ])],
-    #     [block(
-    #         [var(r,boolean)],
-    #         [
-    #             assign(r,call(equalOr,[true,false])),
-    #             call(writeBool,[r]),
-    #             call(writeLn,[])
-    #         ])
-    #     ]]."""
-    #     expect = "false\n"
-    #     self.assertTrue(TestVM.test(input, expect, 51))
-
-    # def test_52(self):
-    #     input = """[[var(a,integer),var(b,integer),var(c,integer)],[],[
-    #         assign(a,idiv(times(4,5),2)),
-    #         assign(b,imod(sub(20,5),4)),
-    #         assign(c,add(a,b)),
-    #         call(writeIntLn,[a]),
-    #         call(writeIntLn,[b]),
-    #         call(writeIntLn,[c])
-    #     ]]."""
-    #     expect = "10\n3\n13\n"
-    #     self.assertTrue(TestVM.test(input, expect, 52))
-
-    # def test_53(self):
-    #     input = """[[var(x,integer),const(y,5)],[],[
-    #         assign(x,add(y,1)),
-    #         call(writeIntLn,[x]),
-    #         call(writeIntLn,[y])
-    #     ]]."""
-    #     expect = "6\n5\n"
-    #     self.assertTrue(TestVM.test(input, expect, 53))
-
-    # def test_54(self):
-    #     input = """[[],
-    #     [proc(printTwice,[par(a,integer)],[
-    #         block([var(b,integer)],[
-    #             assign(b,add(a,a)),
-    #             call(writeIntLn,[b])
-    #         ])
-    #     ])],
-    #     [block([var(x,integer)],[
-    #         assign(x,4),
-    #         call(printTwice,[x])
-    #     ])]]."""
-    #     expect = "8\n"
-    #     self.assertTrue(TestVM.test(input, expect, 54))
-
-    # def test_55(self):
-    #     input = """[[var(i,integer)],[],[
-    #         assign(i,0),
-    #         while(less(i,3),block([],[
-    #             call(writeIntLn,[i]),
-    #             assign(i,add(i,1))
-    #         ]))
-    #     ]]."""
-    #     expect = "0\n1\n2\n"
-    #     self.assertTrue(TestVM.test(input, expect, 55))
-
-    # def test_56(self):
-    #     input = """[[var(i,integer)],[],[
-    #         assign(i,0),
-    #         do([
-    #             call(writeIntLn,[i]),
-    #             assign(i,add(i,1))
-    #         ],less(i,3))
-    #     ]]."""
-    #     expect = "0\n1\n2\n"
-    #     self.assertTrue(TestVM.test(input, expect, 56))
-
-    # def test_57(self):
-    #     input = """[[var(i,integer)],[],[
-    #         assign(i,0),
-    #         loop(3,block([],[
-    #             call(writeIntLn,[i]),
-    #             assign(i,add(i,1))
-    #         ]))
-    #     ]]."""
-    #     expect = "0\n1\n2\n"
-    #     self.assertTrue(TestVM.test(input, expect, 57))
-
-    # def test_58(self):
-    #     input = """[[var(a,integer)],[],[
-    #         assign(a,2),
-    #         if(eql(a,2), call(writeIntLn,[1]), call(writeIntLn,[0]))
-    #     ]]."""
-    #     expect = "1\n"
-    #     self.assertTrue(TestVM.test(input, expect, 58))
-
-    # def test_59(self):
-    #     input = """[[var(a,integer)],[],[
-    #         assign(a,3),
-    #         if(eql(a,3), call(writeIntLn,[99]))
-    #     ]]."""
-    #     expect = "99\n"
-    #     self.assertTrue(TestVM.test(input, expect, 59))
-
-    # def test_60(self):
-    #     input = """[[var(i,integer)],[],[
-    #         assign(i,0),
-    #         while(true,block([],[
-    #             if(eql(i,2), break(null)),
-    #             call(writeIntLn,[i]),
-    #             assign(i,add(i,1))
-    #         ]))
-    #     ]]."""
-    #     expect = "0\n1\n"
-    #     self.assertTrue(TestVM.test(input, expect, 60))
-
-    # def test_61(self):
-    #     input = """[[var(i,integer)],[],[
-    #         assign(i,0),
-    #         while(less(i,4),block([],[
-    #             assign(i,add(i,1)),
-    #             if(eql(i,2), continue(null)),
-    #             call(writeIntLn,[i])
-    #         ]))
-    #     ]]."""
-    #     expect = "1\n3\n4\n"
-    #     self.assertTrue(TestVM.test(input, expect, 61))
-
-    # def test_62(self):
-    #     input = """[[],
-    #     [proc(printTwice,[par(a,integer)],[
-    #         block([var(b,integer)],[
-    #             assign(b,add(a,a)),
-    #             call(writeIntLn,[b])
-    #         ])
-    #     ])],
-    #     [
-    #         block([var(x,integer)],[
-    #             assign(x,4),
-    #             call(printTwice,[x])
-    #         ])
-    #     ]]."""
-    #     expect = "8\n"
-    #     self.assertTrue(TestVM.test(input, expect, 62))
-
-    # def test_63(self):
-    #     input = """[[var(i,integer)],[],[
-    #         assign(i,0),
-    #         while(true,block([],[
-    #             if(eql(i,2), break(null)),
-    #             call(writeIntLn,[i]),
-    #             assign(i,add(i,1))
-    #         ]))
-    #     ]]."""
-    #     expect = "0\n1\n"
-    #     self.assertTrue(TestVM.test(input, expect, 63))
-
-    # def test_64(self):
-    #     input = """[[var(i,integer)],[],[
-    #         assign(i,0),
-    #         do([
-    #             if(eql(i,2), break(null)),
-    #             call(writeIntLn,[i]),
-    #             assign(i,add(i,1))
-    #         ],true)
-    #     ]]."""
-    #     expect = "0\n1\n"
-    #     self.assertTrue(TestVM.test(input, expect, 64))
-
-    # def test_65(self):
-    #     input = """[[var(i,integer)],[],[
-    #         assign(i,0),
-    #         loop(5, block([],[
-    #             if(eql(i,3), break(null)),
-    #             call(writeIntLn,[i]),
-    #             assign(i,add(i,1))
-    #         ]))
-    #     ]]."""
-    #     expect = "0\n1\n2\n"
-    #     self.assertTrue(TestVM.test(input, expect, 65))
-
-    # def test_66(self):
-    #     input = """[[var(i,integer)],[],[
-    #         assign(i,0),
-    #         while(less(i,4),block([],[
-    #             assign(i,add(i,1)),
-    #             if(eql(i,2), continue(null)),
-    #             call(writeIntLn,[i])
-    #         ]))
-    #     ]]."""
-    #     expect = "1\n3\n4\n"
-    #     self.assertTrue(TestVM.test(input, expect, 66))
-
-    # def test_67(self):
-    #     input = """[[var(i,integer)],[],[
-    #         assign(i,0),
-    #         do([
-    #             assign(i,add(i,1)),
-    #             if(eql(i,2), continue(null)),
-    #             call(writeIntLn,[i])
-    #         ],less(i,4))
-    #     ]]."""
-    #     expect = "1\n3\n4\n"
-    #     self.assertTrue(TestVM.test(input, expect, 67))
-
-    # def test_68(self):
-    #     input = """[[var(i,integer)],[],[
-    #         assign(i,0),
-    #         loop(5, block([],[
-    #             assign(i,add(i,1)),
-    #             if(eql(i,3), continue(null)),
-    #             call(writeIntLn,[i])
-    #         ]))
-    #     ]]."""
-    #     expect = "1\n2\n4\n5\n"
-    #     self.assertTrue(TestVM.test(input, expect, 68))
-
-    # def test_69(self):
-    #     input = """[[var(a,integer),var(a,real)],[],[]]."""
-    #     expect = "Redeclared identifier: var(a,real)"
-    #     self.assertTrue(TestVM.test(input, expect, 69))
-
-    # def test_70(self):
-    #     input = """[[],[proc(p,[par(a,integer),par(a,real)],[])],[]]."""
-    #     expect = "Redeclared identifier: par(a,real)"
-    #     self.assertTrue(TestVM.test(input, expect, 70))
-
-    # def test_71(self):
-    #     input = """[[],[],[block([var(a,integer),var(a,real)],[])]]."""
-    #     expect = "Redeclared identifier: var(a,real)"
-    #     self.assertTrue(TestVM.test(input, expect, 71))
-
-    # def test_72(self):
-    #     input = """[[],[func(readInt,[],integer,[])],[]]."""
-    #     expect = "Redeclared function: readInt"
-    #     self.assertTrue(TestVM.test(input, expect, 72))
-
-    # def test_73(self):
-    #     input = """[[var(a,integer)],[],[assign(a,add(1,true))]]."""
-    #     expect = "Type mismatch: add(1,true)"
-    #     self.assertTrue(TestVM.test(input, expect, 73))
-
-    # def test_74(self):
-    #     input = """[[var(a,integer)],[],[assign(a,add(b,1))]]."""
-    #     expect = "Undeclared identifier: b"
-    #     self.assertTrue(TestVM.test(input, expect, 74))
-
-    # def test_75(self):
-    #     input = """[[],[proc(p,[par(x,integer)],[])],[call(p,[])]]."""
-    #     expect = "Wrong number of arguments: call(p,[])"
-    #     self.assertTrue(TestVM.test(input, expect, 75))
-
-    # def test_76(self):
-    #     input = """[[var(a,integer)],[func(f,[],integer,[])],[assign(a,call(f,[]))]]."""
-    #     expect = "Invalid expression: call(f,[])"
-    #     self.assertTrue(TestVM.test(input, expect, 76))
-
-    # def test_77(self):
-    #     input = """[[var(a,integer)],[],[assign(a,call(nonexistent,[]))]]."""
-    #     expect = "Undeclared function: call(nonexistent,[])"
-    #     self.assertTrue(TestVM.test(input, expect, 77))
-
-    # def test_78(self):
-    #     input = """[[],[],[call(unknown,[])]]."""
-    #     expect = "Undeclared procedure: call(unknown,[])"
-    #     self.assertTrue(TestVM.test(input, expect, 78))
-
-    # def test_79(self):
-    #     input = """[[],[],[break(null)]]."""
-    #     expect = "Break not in a loop: break(null)"
-    #     self.assertTrue(TestVM.test(input, expect, 79))
-
-    # def test_80(self):
-    #     input = """[[],[],[continue(null)]]."""
-    #     expect = "Continue not in a loop: continue(null)"
-    #     self.assertTrue(TestVM.test(input, expect, 80))
-
-    # def test_81(self):
-    #     input = """[[const(a,5)],[],[assign(a,6)]]."""
-    #     expect = "Cannot assign to a constant: assign(a,6)"
-    #     self.assertTrue(TestVM.test(input, expect, 81))
-
-    # def test_82(self):
-    #     input = """[[var(a,integer)],[],[
-    #         block([var(b,integer)],[assign(b,5)]),
-    #         assign(a,b)
-    #     ]]."""
-    #     expect = "Undeclared identifier: b"
-    #     self.assertTrue(TestVM.test(input, expect, 82))
-
-    # def test_83(self):
-    #     input = """[[var(a,integer)],[],[
-    #         assign(a,1),
-    #         if(a, call(writeIntLn,[1]), call(writeIntLn,[0]))
-    #     ]]."""
-    #     expect = "Type mismatch: if(a,call(writeIntLn,[1]),call(writeIntLn,[0]))"
-    #     self.assertTrue(TestVM.test(input, expect, 83))
-
-    # def test_84(self):
-    #     input = """[[],
-    #     [func(f,[],boolean,[assign(f,1)])],
-    #     [call(writeBool,[call(f,[])])]]."""
-    #     expect = "Type mismatch: assign(f,1)"
-    #     self.assertTrue(TestVM.test(input, expect, 84))
-
-    # def test_85(self):
-    #     input = """[[var(a,integer)],
-    #     [func(f,[],integer,[assign(f,x)])],
-    #     [assign(a,call(f,[]))]]."""
-    #     expect = "Undeclared identifier: x"
-    #     self.assertTrue(TestVM.test(input, expect, 85))
-
-    # def test_86(self):
-    #     input = """[[],
-    #     [proc(printInt,[par(x,integer)],[
-    #         call(writeIntLn,[x])
-    #     ])],
-    #     [call(printInt,[true])]]."""
-    #     expect = "Type mismatch: call(printInt,[true])"
-    #     self.assertTrue(TestVM.test(input, expect, 86))
-
-    def test_87(self):
+    def test_420(self):
+        input = """[
+            [var(x, integer)],
+            [func(negate, [par(a, integer)], integer, [assign(negate, sub(a))])],
+            [assign(x, call(negate, [5])), call(writeInt, [x])]
+        ]."""
+        expect = "-5"
+        self.assertTrue(TestVM.test(input, expect, 420))
+        
+    def test_421(self):
+        input = """[[var(x,integer)],[],[call(writeInt,[x])]]."""
+        expect = "Invalid expression: x"
+        self.assertTrue(TestVM.test(input, expect, 421))
+        
+    def test_422(self):
         input = """[[],
-        [func(double,[par(x,integer)],integer,[assign(double,times(x,2))])],
-        [block([var(x,integer)],[
-            assign(x,3),
-            block([var(x,integer)],[
-                assign(x,call(double,[5])),
-                call(writeIntLn,[x])
-            ]),
-            call(writeIntLn,[x])
-        ])]]."""
-        expect = "10\n3\n"
-        self.assertTrue(TestVM.test(input, expect, 87))
-
-    def test_88(self):
-        input = """[[var(result,integer)],
-        [func(fact,[par(n,integer)],integer,[
-            if(le(n,1),assign(fact,1),
-            assign(fact,times(n,call(fact,[sub(n,1)]))))
+        [proc(printSum, [par(a,integer),par(b,integer)], [
+            call(writeInt,[add(a,b)])
         ])],
-        [
-            assign(result,call(fact,[5])),
-            call(writeIntLn,[result])
-        ]]."""
-        expect = "120\n"
-        self.assertTrue(TestVM.test(input, expect, 88))
+        [call(printSum,[2,3])]]."""
+        expect = "5"
+        self.assertTrue(TestVM.test(input, expect, 422))
+        
+    def test_423(self):
+        input = """[
+            [],
+            [],
+            [call(writeInt, [call(double, [3, 5])])]
+        ]."""
+        expect = "Undeclared function: call(double,[3,5])"
+        self.assertTrue(TestVM.test(input, expect, 423))
 
-    def test_89(self):
-        input = """[[var(x,boolean)],[],[
-            assign(x,false),
-            call(writeBool,[band(x,add(1,true))]),
-            call(writeLn,[])
-        ]]."""
-        expect = "false\n"
-        self.assertTrue(TestVM.test(input, expect, 89))
-
-    def test_90(self):
+    def test_424(self):
         input = """[[],
-        [func(f,[par(x,integer)],integer,[
-            assign(f,add(x,1))
-        ])],
-        [call(writeIntLn,[call(f,[4])])]]."""
-        expect = "5\n"
-        self.assertTrue(TestVM.test(input, expect, 90))
+        [],
+        [call(printSum,[2,3])]]."""
+        expect = "Undeclared procedure: call(printSum,[2,3])"
+        self.assertTrue(TestVM.test(input, expect, 424))
+            
+    def test_425(self):
+        input = """[[var(x,integer)],[],
+        [assign(x,1),
+        block([var(x,integer)], [assign(x,2), call(writeIntLn,[x])]),
+        call(writeInt,[x])]]."""
+        expect = "2\n1"
+        self.assertTrue(TestVM.test(input, expect, 425))
 
-    def test_91(self):
+    def test_426(self):
+        input = """[[],[],
+        [block([var(a,integer),var(a,real)], [call(writeInt,[1])])]]."""
+        expect = "Redeclared identifier: var(a,real)"
+        self.assertTrue(TestVM.test(input, expect, 426))
+
+    def test_427(self):
+        input = """[[],[],[
+            block([var(a,integer)], [assign(a,3), call(writeIntLn,[a])]),
+            call(writeInt,[a])
+        ]]."""
+        expect = "3\nUndeclared identifier: a"
+        self.assertTrue(TestVM.test(input, expect, 427))
+
+    def test_428(self):
+        input = """[[var(x,integer)],[],[
+            assign(x,0),
+            if(true, assign(x,1), assign(x,2)),
+            call(writeInt,[x])
+        ]]."""
+        expect = "1"
+        self.assertTrue(TestVM.test(input, expect, 428))
+
+    def test_429(self):
+        input = """[[var(x,integer)],[],[
+            assign(x,0),
+            if(false, assign(x,1), assign(x,2)),
+            call(writeInt,[x])
+        ]]."""
+        expect = "2"
+        self.assertTrue(TestVM.test(input, expect, 429))
+
+    def test_430(self):
         input = """[[var(x,integer)],[],[
             assign(x,1),
-            block([const(y,10)],[
-                call(writeIntLn,[add(x,y)])
-            ])
+            if(x, assign(x,2), assign(x,3)),
+            call(writeInt,[x])
         ]]."""
-        expect = "11\n"
-        self.assertTrue(TestVM.test(input, expect, 91))
+        expect = "Type mismatch: if(x,assign(x,2),assign(x,3))"
+        self.assertTrue(TestVM.test(input, expect, 430))
+
+    def test_431(self):
+        input = """[[var(x,integer)],[],[
+            assign(x,0),
+            if(eql(add(x,3),3), assign(x,5), assign(x,9)),
+            call(writeInt,[x])
+        ]]."""
+        expect = "5"
+        self.assertTrue(TestVM.test(input, expect, 431))
+        
+    def test_432(self):
+        input = """[[var(x,integer)],[],[
+            assign(x,1),
+            if(band(eql(x,1),eql(add(2,2),4)), assign(x,10), assign(x,20)),
+            call(writeInt,[x])
+        ]]."""
+        expect = "10"
+        self.assertTrue(TestVM.test(input, expect, 432))
+    
+    def test_433(self):
+        input = """[[var(i,integer)],[],[
+            assign(i,0),
+            while(less(i,3), assign(i, add(i,1))),
+            call(writeInt,[i])
+        ]]."""
+        expect = "3"
+        self.assertTrue(TestVM.test(input, expect, 433))
+        
+    def test_434(self):
+        input = """[[var(i,integer)],[],[
+            assign(i,0),
+            do([assign(i, add(i,1)),call(writeIntLn,[i])], less(i,3)),
+            call(writeInt,[i])
+        ]]."""
+        expect = "1\n2\n3\n3"
+        self.assertTrue(TestVM.test(input, expect, 434))
+        
+    def test_435(self):
+        input = """[[var(i,integer)],[],[
+            assign(i,0),
+            loop(3, assign(i, add(i,1))),
+            call(writeInt,[i])
+        ]]."""
+        expect = "3"
+        self.assertTrue(TestVM.test(input, expect, 435))
+            
+    def test_436(self):
+        input = """[[var(i,integer)],[],[
+            assign(i,7),
+            loop(0, assign(i, 999)),
+            call(writeInt,[i])
+        ]]."""
+        expect = "7"
+        self.assertTrue(TestVM.test(input, expect, 436))
+        
+    def test_437(self):
+        input = """[[var(i,integer)],[],[
+            assign(i, 0),
+            while(less(i, 5), block([], [
+                assign(i, add(i,1)),
+                if(eql(i,3), break(null))
+            ])),
+            call(writeInt,[i])
+        ]]."""
+        expect = "3"
+        self.assertTrue(TestVM.test(input, expect, 437))
+
+    def test_438(self):
+        input = """[[],[proc(foo,[],[break(null)])],[loop(2,call(foo,[]))]]."""
+        expect = "Break not in a loop: break(null)"
+        self.assertTrue(TestVM.test(input, expect, 438))
+        
+    def test_439(self):
+        input = """[[var(i,integer), var(sum,integer)],[],[
+            assign(i, 0), assign(sum, 0),
+            while(less(i, 5), block([], [
+                assign(i, add(i,1)),
+                if(eql(i,3), continue(null)),
+                assign(sum, add(sum,1))
+            ])),
+            call(writeInt,[sum])
+        ]]."""
+        expect = "4"
+        self.assertTrue(TestVM.test(input, expect, 439))
+
+    def test_440(self):
+        input = """[[var(i,integer)],[],[
+            assign(i,0),
+            do([block([], [
+                assign(i, add(i,1)),
+                if(eql(i,2), break(null))
+            ])], less(i, 5)),
+            call(writeInt,[i])
+        ]]."""
+        expect = "2"
+        self.assertTrue(TestVM.test(input, expect, 440))
+        
+    def test_441(self):
+        input = """[[var(i,integer)],[],[
+            assign(i,0),
+            loop(5, block([], [
+                assign(i, add(i,1)),
+                if(eql(i,2), break(null))
+            ])),
+            call(writeInt,[i])
+        ]]."""
+        expect = "2"
+        self.assertTrue(TestVM.test(input, expect, 441))
+        
+    def test_442(self):
+        input = """[[var(i,integer), var(s,integer)],[],[
+            assign(i, 0), assign(s, 0),
+            do([block([], [
+                assign(i, add(i,1)),
+                if(eql(i,2), continue(null)),
+                assign(s, add(s,1))
+            ])], less(i, 5)),
+            call(writeInt,[s])
+        ]]."""
+        expect = "4"
+        self.assertTrue(TestVM.test(input, expect, 442))
+        
+    def test_443(self):
+        input = """[[var(i,integer), var(sum,integer)],[],[
+            assign(i,0), assign(sum,0),
+            loop(5, block([], [
+                assign(i, add(i,1)),
+                if(eql(i,3), continue(null)),
+                assign(sum, add(sum,1))
+            ])),
+            call(writeInt,[sum])
+        ]]."""
+        expect = "4"
+        self.assertTrue(TestVM.test(input, expect, 442))
+
+    def test_444(self):
+        input = """[[var(a,integer)],
+        [func(foo,[par(a,integer),par(b,integer)],integer,[assign(a,add(a,b)),assign(foo,a)])],
+        [assign(a,3),call(writeIntLn,[call(foo,[a,3])]),call(writeIntLn,[a])]]."""
+        expect = "6\n3\n"
+        self.assertTrue(TestVM.test(input, expect, 444))
+
+    def test_445(self):
+        input = """[[],[func(foo,[],integer,[assign(foo,3)])],
+        [call(writeIntLn,[call(foo,[])])]]."""
+        expect = "3\n"
+        self.assertTrue(TestVM.test(input, expect, 445))
+
+    def test_446(self):
+        input = """[[],[func(foo,[par(a,integer)],integer,[assign(foo,1)])],
+        [call(writeInt,[call(foo,[true])])]]."""
+        expect = "Type mismatch: call(foo,[true])"
+        self.assertTrue(TestVM.test(input, expect, 446))
+
+    def test_447(self):
+        input = """[[],[],[call(writeInt,[add(10,true)])]]."""
+        expect = "Type mismatch: add(10,true)"
+        self.assertTrue(TestVM.test(input, expect, 447))
+
+    def test_448(self):
+        input = """[[],[],[call(writeBool,[add(10,3)])]]."""
+        expect = "Type mismatch: call(writeBool,[add(10,3)])"
+        self.assertTrue(TestVM.test(input, expect, 448))
+
+    def test_449(self):
+        input = """[[var(a,integer)],[],[assign(a,3),if(a,call(writeInt,[3]))]]."""
+        expect = "Type mismatch: if(a,call(writeInt,[3]))"
+        self.assertTrue(TestVM.test(input, expect, 449))
+
+    def test_450(self):
+        input = """[[],[func(foo,[],float,[assign(foo,3.0)])],
+        [call(writeInt,[call(foo,[])])]]."""
+        expect = "Type mismatch: call(writeInt,[call(foo,[])])"
+        self.assertTrue(TestVM.test(input, expect, 450))
+
+    def test_451(self):
+        input = """[[var(a,integer)],[func(foo,[],integer,[])],[assign(a,call(foo,[]))]]."""
+        expect = "Invalid expression: call(foo,[])"
+        self.assertTrue(TestVM.test(input, expect, 451))
+
+    def test_452(self):
+        input = """[[var(a,integer)],[],[call(writeInt,[a])]]."""
+        expect = "Invalid expression: a"
+        self.assertTrue(TestVM.test(input, expect, 452))
+
+    def test_453(self):
+        input = """[[var(a,integer)],[],[assign(a,add(b,1)),call(writeIntLn,[a])]]."""
+        expect = "Undeclared identifier: b"
+        self.assertTrue(TestVM.test(input, expect, 453))
+
+    def test_454(self):
+        input = """[[var(a,integer)],
+        [proc(foo,[],[[var(b,integer)],[assign(b,1),assign(a,b)]])],
+        [call(writeIntLn,[b])]]."""
+        expect = "Undeclared identifier: b"
+        self.assertTrue(TestVM.test(input, expect, 454))
+
+    def test_455(self):
+        input = """[[],[proc(foo,[],[])],[call(foo,[1])]]."""
+        expect = "Wrong number of arguments: call(foo,[1])"
+        self.assertTrue(TestVM.test(input, expect, 455))
+
+    def test_456(self):
+        input = """[[],[proc(foo,[par(a,integer)],[])],[call(foo,[])]]."""
+        expect = "Wrong number of arguments: call(foo,[])"
+        self.assertTrue(TestVM.test(input, expect, 456))
+
+    def test_457(self):
+        input = """[[var(a,integer)],[],[assign(a,call(foo,[]))]]."""
+        expect = "Undeclared function: call(foo,[])"
+        self.assertTrue(TestVM.test(input, expect, 457))
+
+    def test_458(self):
+        input = """[[],[],[call(foo,[])]]."""
+        expect = "Undeclared procedure: call(foo,[])"
+        self.assertTrue(TestVM.test(input, expect, 458))
+
+    def test_459(self):
+        input = """[[],[],[break(null)]]."""
+        expect = "Break not in a loop: break(null)"
+        self.assertTrue(TestVM.test(input, expect, 459))
+
+    def test_460(self):
+        input = """[[],[proc(foo,[],[break(null)])],[do(call(foo,[]),true)]]."""
+        expect = "Break not in a loop: break(null)"
+        self.assertTrue(TestVM.test(input, expect, 460))
+
+    def test_461(self):
+        input = """[[],[],[continue(null)]]."""
+        expect = "Continue not in a loop: continue(null)"
+        self.assertTrue(TestVM.test(input, expect, 461))
+
+    def test_462(self):
+        input = """[[const(a,7)],[],[assign(a,8)]]."""
+        expect = "Cannot assign to a constant: assign(a,8)"
+        self.assertTrue(TestVM.test(input, expect, 462))
+
+    def test_463(self):
+        input = """[[var(a,integer),var(b,real),var(a,boolean)],[],[]]."""
+        expect = "Redeclared identifier: var(a,boolean)"
+        self.assertTrue(TestVM.test(input, expect, 463))
+
+    def test_464(self):
+        input = """[[],[proc(foo,[par(a,integer),par(b,integer),par(a,real)],[])],[]]."""
+        expect = "Redeclared identifier: par(a,real)"
+        self.assertTrue(TestVM.test(input, expect, 464))
+
+    def test_465(self):
+        input = """[[const(a,7),var(a,real)],[proc(proce,[],[assign(a,10.0)])],[]]."""
+        expect = "Redeclared identifier: var(a,real)"
+        self.assertTrue(TestVM.test(input, expect, 465))
+
+    def test_466(self):
+        input = """[[],[func(readInt,[],real,[])],[]]."""
+        expect = "Redeclared function: readInt"
+        self.assertTrue(TestVM.test(input, expect, 466))
+
+    def test_467(self):
+        input = """[[],[func(foo,[],integer,[]),proc(foo,[a],[])],[]]."""
+        expect = "Redeclared procedure: foo"
+        self.assertTrue(TestVM.test(input, expect, 467))
+
+    def test_468(self):
+        input = """[[var(foo,integer)],[proc(foo,[a],[])],[]]."""
+        expect = "Redeclared procedure: foo"
+        self.assertTrue(TestVM.test(input, expect, 468))
