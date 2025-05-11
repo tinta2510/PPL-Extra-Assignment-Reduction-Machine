@@ -4,7 +4,8 @@ reduce_prog([Var,Func,Body]) :-
 	create_env(Var,env([[]],_),Env),
 	% Add functions to the symbol table
 	create_env(Func,Env,Env1),
-	reduce_stmt(config(Body,Env1),_).
+	% Reduce the body of the program
+	reduce_stmt(config(Body,Env1),_).	
 
 % Define boolean values
 boolean(true).
@@ -49,8 +50,8 @@ create_env([var(I,Type)|_],env([_],_),_):- % Global scope
 	is_builtin(I,_),!,throw(redeclare_identifier(var(I,Type))).
 create_env([var(I,Type)|_],env([L1|_],_),_):-
 	has_declared(I,L1,_),!,throw(redeclare_identifier(var(I,Type))).
-create_env([var(I,Type)|L],env([L1|L2],T),EnvOut):- 
-	create_env(L,env([[id(I,var,Type,null)|L1]|L2],T),EnvOut).
+create_env([var(I,Type)|L],env([L1|L2],Context),EnvOut):- 
+	create_env(L,env([[id(I,var,Type,null)|L1]|L2],Context),EnvOut).
 
 %% Constant declaration
 create_env([const(I,E)|_],env([_],_),_):- % Global scope
@@ -99,11 +100,11 @@ create_env([proc(I,Params,Stmts)|L],env([L1|L2],T),EnvOut):-
 update_env(Id,_,env([],_),env(_,_)):-
 	throw(undeclare_identifier(Id)).
 
-update_env(Id,Val,env([Scope|L],CurrFunc),env([ScopeOut|L],CurrFunc)):-
+update_env(Id,Val,env([Scope|L],context(CurrFunc,_)),env([ScopeOut|L],context(CurrFunc,_))):-
 	update_scope(Id,Val,Scope,ScopeOut,CurrFunc),!.
 
-update_env(Id,Val,env([Scope|L],CurrFunc),env([Scope|LOut],CurrFunc)):-
-	update_env(Id,Val,env(L,_),env(LOut,CurrFunc)).
+update_env(Id,Val,env([Scope|L],Context),env([Scope|LOut],Context)):-
+	update_env(Id,Val,env(L,_),env(LOut,Context)).
 
 update_scope(_,_,[],[],_):- fail.
 update_scope(Id,Val,[id(Id,const,_,_)|_],_,_):-
@@ -229,14 +230,15 @@ reduce(config(ne(E1, E2), Env), config(R, EnvOut)) :-
 %% --- Relational expressions - END ---
 
 %% --- Variable, Constant expressions - START ---
-reduce(config(Id,env(L,F)),config(Value,env(L,F))):-
-	atom(Id), %??? simple identifier
-	(lookup(Id,L,id(Id,Kind,_,Value)) -> % Lookup in the environment
+reduce(config(Id,Env),config(Value,Env)):-
+	atom(Id), %??? simple identifier,
+	Env = env(SymTable,_),
+	(lookup(Id,SymTable,id(Id,Kind,_,Value)) -> % Lookup in the environment
 		((Kind \= var, Kind \= const, Kind \= par -> 
-		 	throw(undeclared_identifier(Id)) ; true),
+		 	throw(undeclare_identifier(Id)) ; true),
 		  (Value == null -> throw(invalid_expression(Id)) ; true)
 		);
-		throw(undeclared_identifier(Id))).
+		throw(undeclare_identifier(Id))).
 %% --- Variable, Constant expression - END ---
 
 %% --- Function call - START --- 
@@ -245,7 +247,7 @@ reduce(config(call(F,[]),_),config(X,_)):-
 	p_call_builtin(F,X).
 
 reduce(config(call(F,Args),Env),config(R,EnvOut)):-
-	Env = env(SymTable,_),
+	Env = env(SymTable,context(_,InLoop)),
 	lookup(F,SymTable,id(F,func,func(F,Params,_,Stmts),_)),!,
 	(length(Args, N),length(Params, M),N==M-> % Check the number of arguments
 		(
@@ -256,9 +258,9 @@ reduce(config(call(F,Args),Env),config(R,EnvOut)):-
 			bind_args(Params,Args1,Env1,Env2),
 			% Reduce the function body
 			Env2 = env(SymTable1,_),
-			reduce_stmt(config(Stmts,env(SymTable1,F)),Env3),
+			reduce_stmt(config(Stmts,env(SymTable1,context(F,_))),Env3),
 			Env3 = env([_|SymTable2],_),
-			EnvOut = env(SymTable2,_),
+			EnvOut = env(SymTable2,context(_,InLoop)),
 			lookup(F,SymTable2,id(_,_,_,R)
 		)
 		; throw(wrong_number_of_argument(call(F,Args)))).
@@ -276,15 +278,15 @@ reduce_all(config(E,Env),config(E2,EnvOut)):-
 
 % --- Statement reduction - START ---
 reduce_stmt(config([],Env),Env):- !. % Base case
-%% --- Procedure-Call - START ---
-reduce_stmt(config([call(F,[X])|Body],Env),EnvOut) :- 
+%% --- Procedure - Call - START ---
+reduce_stmt(config([call(F,[X])|Rest],Env),EnvOut) :- 
 	is_builtin(F,proc),!,
 	reduce_all(config(X,Env),config(V,Env1)),
 	p_call_builtin(F,[V]), %!!! Read stmt's input
-	reduce_stmt(config(Body,Env1),EnvOut).
+	reduce_stmt(config(Rest,Env1),EnvOut).
 
-reduce_stmt(config([call(F,Args)|Body],Env),EnvOut) :-
-	Env = env(SymTable,_),
+reduce_stmt(config([call(F,Args)|Rest],Env),EnvOut) :-
+	Env = env(SymTable,context(_,InLoop)),
 	lookup(F,SymTable,id(F,proc,proc(F,Params,Stmts),_)),!,
 	((length(Args, N),length(Params, M),N==M)-> % Check the number of arguments
 		(
@@ -295,19 +297,19 @@ reduce_stmt(config([call(F,Args)|Body],Env),EnvOut) :-
 			bind_args(Params,Args1,Env1,Env2),
 			% Reduce the function body
 			Env2 = env(SymTable1,_),
-			reduce_stmt(config(Stmts,env(SymTable1,F)),Env3),
+			reduce_stmt(config(Stmts,env(SymTable1,context(F,_))),Env3),
 			Env3 = env([_|SymTable2],_),
-			Env4 = env(SymTable2,_)
+			Env4 = env(SymTable2,context(_,InLoop))
 		)
 		; throw(wrong_number_of_argument(call(F,Args)))),
-	reduce_stmt(config(Body,Env4),EnvOut).
+	reduce_stmt(config(Rest,Env4),EnvOut).
 	
 reduce_stmt(config([call(F,Args)|_],_),_):-
 	throw(undeclare_procedure(call(F,Args))).
 %% --- Procedure-Call - END ---
 
-%% --- Assignment - START ---
-reduce_stmt(config([assign(Id,E)|Body],Env),EnvOut) :-
+%% --- Assignment ---
+reduce_stmt(config([assign(Id,E)|Rest],Env),EnvOut) :-
 	reduce_all(config(E,Env),config(V,Env1)),
 	catch(
 		update_env(Id,V,Env1,Env2), 
@@ -323,4 +325,99 @@ reduce_stmt(config([assign(Id,E)|Body],Env),EnvOut) :-
 			)
 		)
 	),
-	reduce_stmt(config(Body,Env2),EnvOut).
+
+	reduce_stmt(config(Rest,Env2),EnvOut).
+
+%% --- Compound statement ---
+reduce_stmt(config([block(Decls,Stmts)|Rest],Env),EnvOut) :-
+	Env = env(SymTable,Context),
+	% Add the declarations to the local scope
+	create_env(Decls,env([[]|SymTable],Context),Env1),
+	% Perform stmts in the new env
+	reduce_stmt(config(Stmts,Env1),Env2),
+	% Remove the local scope
+	Env2 = env([_|SymTable2],Context2),
+	reduce_stmt(config(Rest,env(SymTable2,Context2)),EnvOut).
+
+%% --- If statement ---
+reduce_stmt(config([if(Cond,Then,Else)|Rest],Env),EnvOut) :-
+	reduce_all(config(Cond,Env),config(V,Env1)),
+	(boolean(V) -> (
+		V == true -> reduce_stmt(config([Then],Env1),Env2)
+		; reduce_stmt(config([Else],Env1),Env2)
+	) ; throw(type_mismatch(if(Cond,Then,Else)))),
+	reduce_stmt(config(Rest,Env2),EnvOut).
+
+reduce_stmt(config([if(Cond,Then)|Rest],Env),EnvOut) :-
+	reduce_all(config(Cond,Env),config(V,Env1)),
+	(boolean(V) -> (
+		V == true -> reduce_stmt(config([Then],Env1),Env2)
+		; Env2 = Env1 % Skip 'Then'
+	) ; throw(type_mismatch(if(Cond,Then)))),
+	reduce_stmt(config(Rest,Env2),EnvOut).
+
+%% --- While statement ---
+reduce_stmt(config([while(Cond,Stmt)|Rest],Env),EnvOut):-
+	reduce_all(config(Cond,Env),config(V,Env1)),
+	(boolean(V) -> (
+		(V == true -> 
+			catch(
+				(	
+					Env1 = env(SymTable,context(Func,_)),
+					reduce_stmt(config([Stmt],env(SymTable,context(Func,true))),Env2),
+					reduce_stmt(config([while(Cond, Stmt)|Rest], Env2), EnvOut)
+				),
+				Error,
+				(
+					Error = break(BreakEnv)->
+					 	reduce_stmt(config(Rest, BreakEnv), EnvOut);
+					Error = continue(ContEnv) ->
+						reduce_stmt(config([while(Cond, Stmt)|Rest], ContEnv), EnvOut);
+					throw(Error)
+				)
+			)
+			
+		; 
+			reduce_stmt(config(Rest, Env1), EnvOut))
+	) ; throw(type_mismatch(while(Cond,Stmt)))).
+
+%% -- Do-while statement ---
+reduce_stmt(config([do(List,Cond)|Rest],Env),EnvOut):-
+	reduce_stmt(config(List,Env),Env1),
+	reduce_all(config(Cond,Env1),config(V,Env2)),
+	(boolean(V) -> 
+		(V == true -> 
+			Next = [do(List,Cond)|Rest]
+			; Next = Rest
+		) 
+		; throw(type_mismatch(do(List,Cond)))), 
+	reduce_stmt(config(Next, Env2), EnvOut).
+
+%% --- Loop statement ---
+reduce_stmt(config([loop(E,S)|Rest],Env),EnvOut):-
+	reduce_all(config(E,Env),config(V,Env1)),
+	(integer(V) -> 
+		(V > 0  ->
+			reduce_stmt(config([S],Env1),Env2), 
+			V1 is V - 1,
+			reduce_stmt(config([loop(V1,S)|Rest], Env2), EnvOut)
+		; 
+			reduce_stmt(config(Rest, Env1), EnvOut)
+		)
+		; throw(type_mismatch(loop(E,S)))).
+
+%% --- Break statement ---
+reduce_stmt(config([break(null)|_],env(SymTable,context(_,InLoop))),_):-
+	InLoop == true,!,
+	throw(break(env(SymTable,context(_,true)))).
+
+reduce_stmt(config([break(null)|_],Env),_):-
+	throw(break_not_in_loop(break(null))).
+
+%% --- Continue statement ---
+reduce_stmt(config([continue(null)|_],env(SymTable,context(_,InLoop))),_):-
+	InLoop == true,!,
+	throw(continue(env(SymTable,context(_,true)))),!.
+
+reduce_stmt(config([continue(null)|_],_),_):-
+	throw(continue_not_in_loop(continue(null))).
