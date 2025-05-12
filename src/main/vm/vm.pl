@@ -34,10 +34,10 @@ bind_args([par(Id,_)|Params],[Val|Args],Env,EnvOut):-
 	update_env(Id,Val,Env,Env1),
 	bind_args(Params,Args,Env1,EnvOut).
 
-eval_args([],[],_):-!.
-eval_args([E|T],[V|T1],Env):-
-	reduce_all(config(E,Env),config(V,Env)),
-	eval_args(T,T1,Env).
+eval_args([],[],Env,Env):-!.
+eval_args([E|T],[V|T1],Env,EnvOut):-
+	reduce_all(config(E,Env),config(V,Env1)),
+	eval_args(T,T1,Env1,EnvOut).
 % --- Helper predicates - END ---
 
 % --- Symbol table - START ---
@@ -255,9 +255,10 @@ reduce(config(call(F,Args),Env),config(R,EnvOut)):-
 	lookup(F,SymTable,id(F,func,func(F,Params,_,Stmts),_)),!,
 	(length(Args, N),length(Params, M),N==M-> % Check the number of arguments
 		(
-			eval_args(Args,Args1,Env), % Evaluate the arguments
+			eval_args(Args,Args1,Env,TmpEnv), % Evaluate the arguments
+			TmpEnv = env(TmpSymTable,_),
 			% Add the parameters to the symbol table
-			create_env(Params,env([[]|SymTable],_),Env1),
+			create_env(Params,env([[]|TmpSymTable],_),Env1),
 			% Bind the arguments to the parameters
 			catch(
 				bind_args(Params,Args1,Env1,Env2),
@@ -308,9 +309,10 @@ reduce_stmt(config([call(F,Args)|Rest],Env),EnvOut) :-
 	lookup(F,SymTable,id(F,proc,proc(F,Params,Stmts),_)),!,
 	((length(Args, N),length(Params, M),N==M)-> % Check the number of arguments
 		(
-			eval_args(Args,Args1,Env), % Evaluate the arguments
+			eval_args(Args,Args1,Env,TmpEnv), % Evaluate the arguments
+			TmpEnv = env(TmpSymTable,_),
 			% Add the parameters to the symbol table
-			create_env(Params,env([[]|SymTable],_),Env1),
+			create_env(Params,env([[]|TmpSymTable],_),Env1),
 			% Bind the arguments to the parameters
 			catch(
 				bind_args(Params,Args1,Env1,Env2),
