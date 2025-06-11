@@ -1,1 +1,0 @@
-is_builtin(X,V):-member((X,V),[(readInt,func),(writeIntLn,proc),(writeInt,proc),(readReal,func),(writeRealLn,proc),(writeReal,proc),(readBool,func),(writeBoolLn,proc),(writeBool,proc),(writeLn,proc),(writeStrLn,proc),(writeStr,proc)]).
